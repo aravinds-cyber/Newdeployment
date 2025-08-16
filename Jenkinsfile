@@ -37,7 +37,7 @@ pipeline {
 
     stage('Deploy to Kubernetes (Rolling Update)') {
       steps {
-        withKubeConfig([ credentialsId-2: 'kubeconfig' ]) {
+        withKubeConfig([ aws-credentials-id-2: 'kubeconfig' ]) {
           sh """
             sed 's|IMAGE_TAG|${IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
