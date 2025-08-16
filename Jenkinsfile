@@ -11,7 +11,10 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/aravinds-cyber/k8s-rolling-update-demo.git'
+        git(
+          url: 'https://github.com/aravinds-cyber/k8s-rolling-update-demo.git',
+          credentialsId: 'github-token'    // <-- Jenkins credentials ID for GitHub PAT
+        )
       }
     }
 
@@ -48,6 +51,7 @@ pipeline {
     }
   }
 }
+
 
 
 
