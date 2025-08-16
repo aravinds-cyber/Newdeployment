@@ -2,33 +2,44 @@ pipeline {
   agent any
 
   environment {
-    REGISTRY = 'yourdockerhubuser/sample-app'
+    AWS_ACCOUNT_ID = '695466865413'
+    AWS_REGION     = 'ap-south-1'
+    ECR_REPO       = 'sample-app'
+    IMAGE          = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
   }
 
   stages {
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/youruser/yourrepo.git'
+        git url: 'https://github.com/youruser/k8s-rolling-update-demo.git'
       }
     }
 
-    stage('Build & Push Image') {
+    stage('Build Docker Image') {
       steps {
         script {
-          def tag = "${env.BUILD_NUMBER}"
-          sh "docker build -t $REGISTRY:$tag ."
-          docker.withRegistry('', 'dockerhub-creds') {
-            sh "docker push $REGISTRY:$tag"
-          }
+          IMAGE_TAG = "${env.BUILD_NUMBER}"
+          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
         }
       }
     }
 
-    stage('Deploy to Kubernetes') {
+    stage('Login to ECR & Push Image') {
       steps {
-        withKubeConfig([credentialsId: 'kubeconfig']) {
+        script {
           sh """
-            sed 's|IMAGE_TAG|${env.BUILD_NUMBER}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+            docker push ${IMAGE}:${IMAGE_TAG}
+          """
+        }
+      }
+    }
+
+    stage('Deploy to Kubernetes (Rolling Update)') {
+      steps {
+        withKubeConfig([ credentialsId-2: 'kubeconfig' ]) {
+          sh """
+            sed 's|IMAGE_TAG|${IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
           """
         }
@@ -36,4 +47,5 @@ pipeline {
     }
   }
 }
+
 
