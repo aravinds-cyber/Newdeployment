@@ -13,7 +13,8 @@ pipeline {
       steps {
         git(
           url: 'https://github.com/aravinds-cyber/Newdeployment.git',
-          credentialsId: 'github-token'    // <-- Jenkins credentials ID for GitHub PAT
+          branch: 'main',                 // <-- Explicitly checking out `main`
+          credentialsId: 'github-token'   // <-- Your GitHub PAT credential
         )
       }
     }
@@ -29,7 +30,10 @@ pipeline {
 
     stage('Login to ECR & Push Image') {
       steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id-2']]) {
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'aws-credentials-id-2'
+        ]]) {
           sh """
             aws ecr get-login-password --region $AWS_REGION | \
             docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
@@ -51,6 +55,7 @@ pipeline {
     }
   }
 }
+
 
 
 
