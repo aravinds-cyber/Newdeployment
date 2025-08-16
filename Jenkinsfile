@@ -11,7 +11,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/youruser/k8s-rolling-update-demo.git'
+        git url: 'https://github.com/aravinds-cyber/k8s-rolling-update-demo.git'
       }
     }
 
@@ -26,9 +26,10 @@ pipeline {
 
     stage('Login to ECR & Push Image') {
       steps {
-        script {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials-id-2']]) {
           sh """
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+            aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
             docker push ${IMAGE}:${IMAGE_TAG}
           """
         }
@@ -37,7 +38,7 @@ pipeline {
 
     stage('Deploy to Kubernetes (Rolling Update)') {
       steps {
-        withKubeConfig([ aws-credentials-id-2: 'kubeconfig' ]) {
+        withKubeConfig(credentialsId: 'eks-kubeconfig') {
           sh """
             sed 's|IMAGE_TAG|${IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
@@ -47,5 +48,6 @@ pipeline {
     }
   }
 }
+
 
 
