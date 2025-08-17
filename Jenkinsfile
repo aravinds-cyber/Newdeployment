@@ -23,7 +23,7 @@ pipeline {
         script {
           def IMAGE_TAG = env.BUILD_NUMBER
           sh "docker build -t ${env.IMAGE}:${IMAGE_TAG} ."
-          env.IMAGE_TAG = IMAGE_TAG     // store tag globally for later stage
+          env.IMAGE_TAG = IMAGE_TAG
         }
       }
     }
@@ -31,7 +31,7 @@ pipeline {
     stage('Login to ECR & Push Image') {
       steps {
         withCredentials([usernamePassword(
-            credentialsId: 'aws-ecr-creds',        // Jenkins credential: username=access key, password=secret
+            credentialsId: 'aws-ecr-creds',
             usernameVariable: 'AWS_ACCESS_KEY_ID',
             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
         )]) {
@@ -52,8 +52,11 @@ pipeline {
 
     stage('Deploy to Kubernetes (Rolling Update)') {
       steps {
-        withKubeConfig(credentialsId: 'eks-kubeconfig') {
+        script {
           sh """
+            mkdir -p ~/.kube
+            cp /var/lib/jenkins/.kube/config ~/.kube/config
+
             sed 's|IMAGE_TAG|${env.IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
           """
