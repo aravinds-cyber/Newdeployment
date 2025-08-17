@@ -13,8 +13,7 @@ pipeline {
       steps {
         git(
           url: 'https://github.com/aravinds-cyber/Newdeployment.git',
-          branch: 'main',
-          credentialsId: 'github-token'
+          branch: 'main'
         )
       }
     }
