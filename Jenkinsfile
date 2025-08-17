@@ -13,8 +13,7 @@ pipeline {
       steps {
         git(
           url: 'https://github.com/aravinds-cyber/Newdeployment.git',
-          branch: 'main',                 // <-- Explicitly checking out `main`
-          credentialsId: 'github-token'   // <-- Your GitHub PAT credential
+          branch: 'main'
         )
       }
     }
@@ -32,7 +31,9 @@ pipeline {
       steps {
         withCredentials([[
           $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'aws-credentials-id-2'
+          credentialsId: 'aws-ecr-creds',
+          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
         ]]) {
           sh """
             aws ecr get-login-password --region $AWS_REGION | \
@@ -55,6 +56,7 @@ pipeline {
     }
   }
 }
+
 
 
 
