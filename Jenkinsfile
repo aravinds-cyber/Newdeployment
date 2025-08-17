@@ -55,7 +55,6 @@ pipeline {
         script {
           sh """
             mkdir -p ~/.kube
-            cp /var/lib/jenkins/.kube/config ~/.kube/config
 
             sed 's|IMAGE_TAG|${env.IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
