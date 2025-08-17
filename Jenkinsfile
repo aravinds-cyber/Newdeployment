@@ -5,7 +5,7 @@ pipeline {
     AWS_ACCOUNT_ID = '695466865413'
     AWS_REGION     = 'ap-south-1'
     ECR_REPO       = 'sample-app'
-    IMAGE          = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+    IMAGE          = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${env.ECR_REPO}"
   }
 
   stages {
@@ -21,8 +21,9 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          IMAGE_TAG = "${env.BUILD_NUMBER}"
-          sh "docker build -t ${IMAGE}:${IMAGE_TAG} ."
+          def IMAGE_TAG = env.BUILD_NUMBER
+          sh "docker build -t ${env.IMAGE}:${IMAGE_TAG} ."
+          env.IMAGE_TAG = IMAGE_TAG   // store for later stages
         }
       }
     }
@@ -30,19 +31,21 @@ pipeline {
     stage('Login to ECR & Push Image') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'aws-ecr-creds',         // <-- Must be username=AWS_ACCESS_KEY_ID & password=AWS_SECRET_ACCESS_KEY
-          usernameVariable: 'AWS_ACCESS_KEY_ID',
-          passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+            credentialsId: 'aws-ecr-creds',
+            usernameVariable: 'AWS_ACCESS_KEY_ID',
+            passwordVariable: 'AWS_SECRET_ACCESS_KEY'
         )]) {
-          sh """
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          script {
+            sh """
+              aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+              aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-            aws ecr get-login-password --region $AWS_REGION | \
-            docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+              aws ecr get-login-password --region $AWS_REGION | \
+              docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-            docker push ${IMAGE}:${IMAGE_TAG}
-          """
+              docker push ${env.IMAGE}:${env.IMAGE_TAG}
+            """
+          }
         }
       }
     }
@@ -51,7 +54,7 @@ pipeline {
       steps {
         withKubeConfig(credentialsId: 'eks-kubeconfig') {
           sh """
-            sed 's|IMAGE_TAG|${IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
+            sed 's|IMAGE_TAG|${env.IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
             kubectl apply -f k8s/deploy-gen.yaml
           """
         }
@@ -59,5 +62,6 @@ pipeline {
     }
   }
 }
+
 
 
