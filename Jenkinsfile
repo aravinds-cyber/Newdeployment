@@ -23,7 +23,7 @@ pipeline {
         script {
           def IMAGE_TAG = env.BUILD_NUMBER
           sh "docker build -t ${env.IMAGE}:${IMAGE_TAG} ."
-          env.IMAGE_TAG = IMAGE_TAG   // store for later stages
+          env.IMAGE_TAG = IMAGE_TAG     // store tag globally for later stage
         }
       }
     }
@@ -31,7 +31,7 @@ pipeline {
     stage('Login to ECR & Push Image') {
       steps {
         withCredentials([usernamePassword(
-            credentialsId: 'aws-ecr-creds',
+            credentialsId: 'aws-ecr-creds',        // Jenkins credential: username=access key, password=secret
             usernameVariable: 'AWS_ACCESS_KEY_ID',
             passwordVariable: 'AWS_SECRET_ACCESS_KEY'
         )]) {
@@ -41,7 +41,7 @@ pipeline {
               aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
               aws ecr get-login-password --region $AWS_REGION | \
-              docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+              docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com
 
               docker push ${env.IMAGE}:${env.IMAGE_TAG}
             """
@@ -62,6 +62,7 @@ pipeline {
     }
   }
 }
+
 
 
 
