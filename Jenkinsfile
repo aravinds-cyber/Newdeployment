@@ -56,14 +56,15 @@ pipeline {
           sh """
             mkdir -p ~/.kube
 
-            sed 's|IMAGE_TAG|${env.IMAGE_TAG}|g' k8s/deployment.yaml > k8s/deploy-gen.yaml
-            kubectl apply -f k8s/deploy-gen.yaml
+            sed 's|IMAGE_TAG|${env.IMAGE_TAG}|g' deployment.yaml > deploy-gen.yaml
+            kubectl apply -f deploy-gen.yaml
           """
         }
       }
     }
   }
 }
+
 
 
 
