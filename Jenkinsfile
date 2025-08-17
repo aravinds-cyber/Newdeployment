@@ -30,7 +30,7 @@ pipeline {
     stage('Login to ECR & Push Image') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'aws-ecr-creds',
+          credentialsId: 'aws-ecr-creds',         // <-- Must be username=AWS_ACCESS_KEY_ID & password=AWS_SECRET_ACCESS_KEY
           usernameVariable: 'AWS_ACCESS_KEY_ID',
           passwordVariable: 'AWS_SECRET_ACCESS_KEY'
         )]) {
@@ -59,4 +59,5 @@ pipeline {
     }
   }
 }
+
 
